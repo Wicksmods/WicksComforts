@@ -35,6 +35,9 @@ local PROFILE_DEFAULTS = {
     autoRepair      = false,
     guildRepair     = false,
     sellJunk        = false,
+    -- The one exception to everything-off: a workaround for the
+    -- client's own errors, which are not a preference.
+    clientFixes     = true,
 }
 
 local A = Core:NewAddon("WicksComforts", {
@@ -137,6 +140,11 @@ function A:OnEnable()
         y = toggle("Repair automatically", "autoRepair", y)
         y = toggle("Use guild funds to repair when allowed", "guildRepair", y)
         y = toggle("Sell junk automatically", "sellJunk", y, "Grey quality items only. Nothing else is ever sold.")
+
+        y = O:Heading(page, "Client errors", y - 6)
+        y = O:Check(page, "Quiet errors the game itself throws", function() return db.clientFixes ~= false end,
+            function(v) db.clientFixes = v; ns.Apply() end, y)
+        y = O:Note(page, "Only acts where the fault is present. Right now it stands in a frame the Vanilla-style group finder expects and this build never creates, which otherwise throws every time you reload. Switching this off takes effect after a reload.", y)
 
         y = O:ProfileSection(page, addon, y - 8)
     end)
