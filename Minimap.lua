@@ -13,6 +13,7 @@
 
 local ADDON, ns = ...
 local M = ns:Register("minimap", {})
+local Chrome = ns.Core.Chrome
 
 local SQUARE = "Interface\\BUTTONS\\WHITE8X8"
 
@@ -56,6 +57,22 @@ local function zoomControls()
     return out
 end
 
+-- The suite's own frame in place of Blizzard's ring: one thin border and
+-- fel L-brackets, the same chrome every Wick panel wears. Built on
+-- Chrome so it follows the active theme without any work here.
+function M:EnsureBorder()
+    if self.border or not Minimap then return self.border end
+    local f = CreateFrame("Frame", "WicksComfortsMinimapChrome", Minimap)
+    f:SetAllPoints(Minimap)
+    -- Above the map art and its blips, below anything Blizzard floats over.
+    if Minimap.GetFrameLevel then f:SetFrameLevel(Minimap:GetFrameLevel() + 5) end
+    Chrome:AddBorder(f)
+    Chrome:AddBrackets(f)
+    f:Hide()
+    self.border = f
+    return f
+end
+
 -- Only ever touch what has been asked for, and only put something back if
 -- this addon is what changed it. A switched-off comfort must leave the
 -- frame exactly as another addon or Blizzard left it.
@@ -67,11 +84,14 @@ function M:Apply()
         if Minimap.SetMaskTexture then pcall(Minimap.SetMaskTexture, Minimap, SQUARE) end
         setBlobScalars(0)
         for _, t in ipairs(ringArt()) do t:Hide() end
+        local chrome = self:EnsureBorder()
+        if chrome then chrome:Show() end
         self.shaped = true
     elseif self.shaped then
         if Minimap.SetMaskTexture then pcall(Minimap.SetMaskTexture, Minimap, roundMask()) end
         setBlobScalars(1)
         for _, t in ipairs(ringArt()) do t:Show() end
+        if self.border then self.border:Hide() end
         self.shaped = false
     end
 

@@ -7,8 +7,10 @@
 Small conveniences, each off until you turn it on. Installing this changes
 nothing about your interface until you say so.
 
-- Square minimap, with the round border art and the quest blob rings
-  adjusted to match. The zoom buttons can be hidden.
+- Square minimap, wearing the suite's own chrome: one thin border and
+  fel L-brackets in place of Blizzard's ring, following whichever theme
+  you have set. The quest blob rings are squared off to match and the
+  zoom buttons can be hidden.
 - Tooltips: item level on equipment, item and spell IDs, class colour on
   player names, and what a unit is currently targeting.
 - Auto loot, driven through the game's own setting so it keeps working

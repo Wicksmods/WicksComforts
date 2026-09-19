@@ -16,8 +16,10 @@ interface the moment it loads is a rude houseguest, and several Wick
 products already require WickCore, so this one never surprises someone who
 only wanted bags.
 
-- **Square minimap.** The border art and quest rings are adjusted to suit
-  it. The zoom buttons can be hidden.
+- **Square minimap.** Wearing the suite's own chrome, a thin border and
+  fel L-brackets in place of Blizzard's ring, following your theme. The
+  quest rings are squared off to match and the zoom buttons can be
+  hidden.
 - **Tooltips.** Item level on equipment, item and spell IDs, class colour
   on player names, and what a unit is targeting.
 - **Auto loot.** Driven through the game's own setting, so it keeps
