@@ -57,6 +57,35 @@ local function zoomControls()
     return out
 end
 
+-- Blizzard sizes the container to their round frame art, which is larger
+-- than the map inside it. With the ring hidden that surplus becomes a gap
+-- between the map and the zone header, above or below depending on where
+-- the header sits. Shrinking the container to the map closes it, and
+-- everything anchored to the container follows.
+local function mapContainer()
+    return MinimapCluster and MinimapCluster.MinimapContainer
+end
+
+function M:TightenContainer()
+    local c = mapContainer()
+    if not c or not Minimap or not Minimap.GetSize then return end
+    local w, h = Minimap:GetSize()
+    if not w or w <= 0 then return end
+    if not self.savedContainerSize then
+        self.savedContainerSize = { c:GetSize() }
+    end
+    c:SetSize(w, h)
+end
+
+function M:RestoreContainer()
+    local c = mapContainer()
+    local saved = self.savedContainerSize
+    if c and saved and saved[1] and saved[1] > 0 then
+        c:SetSize(saved[1], saved[2])
+    end
+    self.savedContainerSize = nil
+end
+
 -- The suite's own frame in place of Blizzard's ring: one thin border and
 -- fel L-brackets, the same chrome every Wick panel wears. Built on
 -- Chrome so it follows the active theme without any work here.
@@ -86,12 +115,14 @@ function M:Apply()
         for _, t in ipairs(ringArt()) do t:Hide() end
         local chrome = self:EnsureBorder()
         if chrome then chrome:Show() end
+        self:TightenContainer()
         self.shaped = true
     elseif self.shaped then
         if Minimap.SetMaskTexture then pcall(Minimap.SetMaskTexture, Minimap, roundMask()) end
         setBlobScalars(1)
         for _, t in ipairs(ringArt()) do t:Show() end
         if self.border then self.border:Hide() end
+        self:RestoreContainer()
         self.shaped = false
     end
 
