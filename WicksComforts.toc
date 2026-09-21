@@ -14,3 +14,4 @@ Tooltips.lua
 Loot.lua
 Vendor.lua
 Fixes.lua
+Frames.lua

@@ -38,6 +38,7 @@ local PROFILE_DEFAULTS = {
     -- The one exception to everything-off: a workaround for the
     -- client's own errors, which are not a preference.
     clientFixes     = true,
+    classColorHealth = false,   -- class colour on player, target, focus, boss
 }
 
 local A = Core:NewAddon("WicksComforts", {
@@ -140,6 +141,19 @@ function A:OnEnable()
         y = toggle("Repair automatically", "autoRepair", y)
         y = toggle("Use guild funds to repair when allowed", "guildRepair", y)
         y = toggle("Sell junk automatically", "sellJunk", y, "Grey quality items only. Nothing else is ever sold.")
+
+        y = O:Heading(page, "Unit frames", y - 6)
+        y = O:Check(page, "Class colour on health bars", function() return db.classColorHealth == true end,
+            function(v) db.classColorHealth = v; ns.Apply() end, y)
+        y = O:Note(page, "The game paints every health bar the same green. This colours the player, target, focus and boss frames by class. Party and raid frames have a setting of their own, below.", y)
+        y = O:Check(page, "Class colour on party and raid frames",
+            function() return ns.modules.frames and ns.modules.frames:RaidClassColor() end,
+            function(v) if ns.modules.frames then ns.modules.frames:SetRaidClassColor(v) end end, y)
+        y = O:Note(page, "This one is the game's own setting, set from here so both live in one place.", y)
+        y = O:Button(page, "Move frames", function()
+            if ns.modules.frames then ns.modules.frames:OpenEditMode() end
+        end, y - 2, 110)
+        y = O:Note(page, "Opens the game's Edit Mode, which is what moves Blizzard's frames on this client. Doing it ourselves would taint them and it already saves layouts, so there is nothing to gain.", y)
 
         y = O:Heading(page, "Client errors", y - 6)
         y = O:Check(page, "Quiet errors the game itself throws", function() return db.clientFixes ~= false end,

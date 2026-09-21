@@ -1,5 +1,16 @@
 # Wick's Comforts - Changelog
 
+## Unreleased
+
+- Class colour on health bars, for the player, target, focus and boss
+  frames. The game paints every one the same green, and the class
+  colour setting it does have only covers party and raid.
+- That party and raid setting is now reachable from our options too, so
+  both live in one place.
+- A button that opens Edit Mode. Moving Blizzard's frames is its job:
+  it saves layouts and knows which frames are safe to move, and an
+  addon dragging a protected frame only taints it.
+
 ## 0.1.0 - 2026-09-19
 
 ### First release
