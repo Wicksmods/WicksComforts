@@ -32,7 +32,12 @@ end
 function F:Paint(bar, unit)
     if not bar or not unit then return end
     if ns.db().classColorHealth == false then return end
-    if bar.lockColor or bar.disconnected then return end
+    -- lockColor is Blizzard telling their own update to leave the colour
+    -- alone, which the player frame sets permanently. Honouring it would
+    -- mean never colouring the one frame you look at most, so it is
+    -- exactly the flag this feature exists to override. Disconnected is
+    -- different: grey means something.
+    if bar.disconnected then return end
     local r, g, b = classColor(unit)
     if r then bar:SetStatusBarColor(r, g, b) end
 end
@@ -94,19 +99,38 @@ function F:OpenEditMode()
     return true
 end
 
+-- Never call UnitFrameHealthBar_Update ourselves.
+--
+-- Health is a secret value on this client. Blizzard's own code may
+-- compare one; ours may not, and anything it calls inherits our taint.
+-- Asking their function to redraw a bar therefore blows up inside their
+-- text formatter with "attempt to compare a secret number value",
+-- pointing at us. Colour is the only thing we have any business
+-- touching, so repainting means setting the colour and nothing else.
+local FRAMES = { "PlayerFrame", "TargetFrame", "FocusFrame" }
+
+function F:Repaint()
+    local on = ns.db().classColorHealth
+    for _, name in ipairs(FRAMES) do
+        local frame = rawget(_G, name)
+        local bar = frame and frame.healthbar
+        if bar and bar.unit and not bar.disconnected then
+            if on then
+                self:Paint(bar, bar.unit)
+            else
+                -- Back to the flat green Blizzard uses for anyone alive
+                -- and connected, without going through their code.
+                bar:SetStatusBarColor(0, 1, 0)
+            end
+        end
+    end
+end
+
 function F:Apply()
     if ns.db().classColorHealth then
         self:HookHealthBars()
     end
-    -- Repaint what is already on screen rather than waiting for the next
-    -- health tick.
-    for _, unit in ipairs({ "player", "target", "focus" }) do
-        local fn = rawget(_G, "UnitFrameHealthBar_Update")
-        local frame = _G[unit:gsub("^%l", string.upper) .. "Frame"]
-        if fn and frame and frame.healthbar then
-            Core.safe(fn, frame.healthbar, unit)
-        end
-    end
+    self:Repaint()
 end
 
 function F:Init()

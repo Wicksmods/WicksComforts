@@ -7,6 +7,10 @@
   colour setting it does have only covers party and raid.
 - That party and raid setting is now reachable from our options too, so
   both live in one place.
+- Fixed before anyone else saw it: calling Blizzard's health bar update
+  to repaint threw inside their text formatter, because health is a
+  secret value and our taint made their comparison illegal. Repainting
+  now sets the colour and touches nothing else.
 - A button that opens Edit Mode. Moving Blizzard's frames is its job:
   it saves layouts and knows which frames are safe to move, and an
   addon dragging a protected frame only taints it.
