@@ -35,6 +35,13 @@ local PROFILE_DEFAULTS = {
     autoRepair      = false,
     guildRepair     = false,
     sellJunk        = false,
+    -- Quests
+    autoAcceptQuests = false,
+    autoTurnInQuests = false,
+    -- The client's own settings, surfaced
+    maxCameraZoom    = false,
+    soundInBackground = false,
+    hideProcGlow     = false,
     -- The one exception to everything-off: a workaround for the
     -- client's own errors, which are not a preference.
     clientFixes     = true,
@@ -48,6 +55,20 @@ local A = Core:NewAddon("WicksComforts", {
     defaults = { profile = PROFILE_DEFAULTS, global = {} },
 })
 ns.A = A
+
+-- Console variables, reached the same way everywhere. Several comforts
+-- are nothing more than a setting the game already has and does not show.
+local CV = rawget(_G, "C_CVar")
+function ns.cvGet(name)
+    if CV and CV.GetCVar then return CV.GetCVar(name) end
+    local f = rawget(_G, "GetCVar")
+    return f and f(name) or nil
+end
+function ns.cvSet(name, value)
+    if CV and CV.SetCVar then return pcall(CV.SetCVar, name, value) end
+    local f = rawget(_G, "SetCVar")
+    if f then return pcall(f, name, value) end
+end
 
 -- Modules register here and are applied whenever settings change.
 ns.modules = {}
@@ -141,6 +162,16 @@ function A:OnEnable()
         y = toggle("Repair automatically", "autoRepair", y)
         y = toggle("Use guild funds to repair when allowed", "guildRepair", y)
         y = toggle("Sell junk automatically", "sellJunk", y, "Grey quality items only. Nothing else is ever sold.")
+
+        y = O:Heading(page, "Quests", y - 6)
+        y = toggle("Accept quests automatically", "autoAcceptQuests", y)
+        y = toggle("Hand quests in automatically", "autoTurnInQuests", y)
+        y = O:Note(page, "Hold Shift at any npc to get the normal dialogs back. A quest that offers a choice of rewards is never handed in for you, because there is no way to know which one you wanted.", y)
+
+        y = O:Heading(page, "The camera and the client", y - 6)
+        y = toggle("Zoom the camera out further", "maxCameraZoom", y, "Raises the game's own maximum zoom setting to the highest this client accepts.")
+        y = toggle("Keep sound playing when the game is in the background", "soundInBackground", y)
+        y = toggle("Hide the proc glow on action buttons", "hideProcGlow", y, "The spinning yellow overlay when a spell lights up. The button still changes as it always did; only the overlay goes.")
 
         y = O:Heading(page, "Unit frames", y - 6)
         y = O:Check(page, "Class colour on health bars", function() return db.classColorHealth == true end,

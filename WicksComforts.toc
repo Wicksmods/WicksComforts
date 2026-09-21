@@ -1,6 +1,6 @@
 ## Interface: 20505, 16001
 ## Title: Wick's Comforts
-## Notes: Small comforts: square minimap, richer tooltips, auto loot, auto repair and junk selling. Everything off until you turn it on.
+## Notes: Small comforts: square minimap, richer tooltips, auto loot, auto repair, auto quests, camera zoom and class-coloured health bars. Everything off until you turn it on.
 ## Author: Wick
 ## Version: 0.1.0
 ## Dependencies: WickCore
@@ -15,3 +15,6 @@ Loot.lua
 Vendor.lua
 Fixes.lua
 Frames.lua
+Quests.lua
+Client.lua
+Glow.lua
