@@ -26,40 +26,38 @@ local function classColor(unit)
     return c.r, c.g, c.b
 end
 
--- Repaint after Blizzard has painted. Hooked rather than replaced, so
--- their own logic for disconnected players and locked bars still runs
--- and we only override the colour it landed on.
-function F:Paint(bar, unit)
-    if not bar or not unit then return end
-    if ns.db().classColorHealth == false then return end
-    -- lockColor is Blizzard telling their own update to leave the colour
-    -- alone, which the player frame sets permanently. Honouring it would
-    -- mean never colouring the one frame you look at most, so it is
-    -- exactly the flag this feature exists to override. Disconnected is
-    -- different: grey means something.
-    if bar.disconnected then return end
-    local r, g, b = classColor(unit)
-    if r then bar:SetStatusBarColor(r, g, b) end
-end
+-- Hooking UnitFrameHealthBar_Update was the obvious way and it does not
+-- work: Blizzard's own callers reach it through a local reference, so a
+-- hook on the global never fires. A target frame stayed green.
+--
+-- Their update has a door built into it instead. It only repaints a bar
+-- when lockColor is unset, so setting the colour and raising that flag
+-- makes the colour stick without hooking anything and without our taint
+-- going anywhere near their code.
 
-function F:HookHealthBars()
-    if self.hooked then return end
-    local fn = rawget(_G, "UnitFrameHealthBar_Update")
-    if type(fn) ~= "function" then return false end
-    self.hooked = true
-    hooksecurefunc("UnitFrameHealthBar_Update", function(bar, unit)
-        Core.safe(F.Paint, F, bar, unit)
-    end)
-    -- The value changing repaints the bar too, so catch that as well or
-    -- the colour flickers back to green as the health moves.
-    local onValue = rawget(_G, "UnitFrameHealthBar_OnValueChanged")
-    if type(onValue) == "function" then
-        hooksecurefunc("UnitFrameHealthBar_OnValueChanged", function(bar)
-            Core.safe(F.Paint, F, bar, bar and bar.unit)
-        end)
-    end
-    return true
+local FRAMES = {
+    { "PlayerFrame", "player" },
+    { "TargetFrame", "target" },
+    { "FocusFrame",  "focus"  },
+    { "Boss1TargetFrame", "boss1" }, { "Boss2TargetFrame", "boss2" },
+    { "Boss3TargetFrame", "boss3" }, { "Boss4TargetFrame", "boss4" },
+    { "Boss5TargetFrame", "boss5" },
+    { "PartyMemberFrame1", "party1" }, { "PartyMemberFrame2", "party2" },
+    { "PartyMemberFrame3", "party3" }, { "PartyMemberFrame4", "party4" },
+}
+
+-- The bar hangs off the frame under several names depending on which
+-- template built it, so try each rather than assume one.
+local function healthBarOf(frame)
+    if not frame then return nil end
+    if frame.healthbar then return frame.healthbar end
+    if frame.HealthBar then return frame.HealthBar end
+    local content = frame.TargetFrameContent
+    local main = content and content.TargetFrameContentMain
+    if main and main.HealthBar then return main.HealthBar end
+    return nil
 end
+F.HealthBarOf = healthBarOf
 
 -- Party and raid frames already have a setting for this, so use theirs
 -- rather than painting over the top of it.
@@ -107,19 +105,25 @@ end
 -- text formatter with "attempt to compare a secret number value",
 -- pointing at us. Colour is the only thing we have any business
 -- touching, so repainting means setting the colour and nothing else.
-local FRAMES = { "PlayerFrame", "TargetFrame", "FocusFrame" }
 
 function F:Repaint()
     local on = ns.db().classColorHealth
-    for _, name in ipairs(FRAMES) do
-        local frame = rawget(_G, name)
-        local bar = frame and frame.healthbar
-        if bar and bar.unit and not bar.disconnected then
+    for _, def in ipairs(FRAMES) do
+        local bar = healthBarOf(rawget(_G, def[1]))
+        local unit = (bar and bar.unit) or def[2]
+        if bar and UnitExists and UnitExists(unit) and not bar.disconnected then
             if on then
-                self:Paint(bar, bar.unit)
-            else
-                -- Back to the flat green Blizzard uses for anyone alive
-                -- and connected, without going through their code.
+                local r, g, b = classColor(unit)
+                if r then
+                    bar:SetStatusBarColor(r, g, b)
+                    -- Tell their update to leave it alone from here.
+                    if bar.wicksLocked == nil then bar.wicksLocked = bar.lockColor or false end
+                    bar.lockColor = true
+                end
+            elseif bar.wicksLocked ~= nil then
+                -- Hand the bar back exactly as it was found.
+                bar.lockColor = bar.wicksLocked or nil
+                bar.wicksLocked = nil
                 bar:SetStatusBarColor(0, 1, 0)
             end
         end
@@ -127,17 +131,16 @@ function F:Repaint()
 end
 
 function F:Apply()
-    if ns.db().classColorHealth then
-        self:HookHealthBars()
-    end
     self:Repaint()
 end
 
 function F:Init()
     self:Apply()
-    ns.RegisterEvents({ "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED", "GROUP_ROSTER_UPDATE" })
+    ns.RegisterEvents({ "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED",
+        "GROUP_ROSTER_UPDATE", "INSTANCE_ENCOUNTER_ENGAGE_UNIT", "PLAYER_ENTERING_WORLD" })
     local function repaint() Core.safe(F.Apply, F) end
-    ns:On("PLAYER_TARGET_CHANGED", repaint)
-    ns:On("PLAYER_FOCUS_CHANGED", repaint)
-    ns:On("GROUP_ROSTER_UPDATE", repaint)
+    for _, e in ipairs({ "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED",
+        "GROUP_ROSTER_UPDATE", "INSTANCE_ENCOUNTER_ENGAGE_UNIT", "PLAYER_ENTERING_WORLD" }) do
+        ns:On(e, repaint)
+    end
 end
