@@ -26,14 +26,27 @@ local function classColor(unit)
     return c.r, c.g, c.b
 end
 
--- Hooking UnitFrameHealthBar_Update was the obvious way and it does not
--- work: Blizzard's own callers reach it through a local reference, so a
--- hook on the global never fires. A target frame stayed green.
+-- Two attempts at this were wrong, and both are worth writing down.
 --
--- Their update has a door built into it instead. It only repaints a bar
--- when lockColor is unset, so setting the colour and raising that flag
--- makes the colour stick without hooking anything and without our taint
--- going anywhere near their code.
+-- Hooking UnitFrameHealthBar_Update does nothing: Blizzard reaches it
+-- through a local reference, so a hook on the global never fires.
+--
+-- Their update has a door in it, lockColor, and using it broke the game.
+-- Setting a field on a frame Blizzard created puts a tainted value in
+-- their table. When their code reads it the execution becomes tainted,
+-- and the next thing it does is compare secret health in the status text
+-- formatter, which is illegal for tainted code. Every target change threw
+-- from inside TextStatusBar, blaming us.
+--
+-- So the rule here is that we never write to their frames, never call a
+-- method on them, and never ask them to redraw. We put a bar of our own
+-- on top and keep it in step by reading theirs. Reading is free. Their
+-- bar is still underneath doing exactly what it always did; ours is the
+-- one you see, and it is coloured by class.
+--
+-- The value, minimum and maximum are secret numbers. They are handed
+-- straight from their bar to ours and never compared, which is the one
+-- thing allowed with a secret.
 
 local FRAMES = {
     { "PlayerFrame", "player" },
@@ -58,6 +71,35 @@ local function healthBarOf(frame)
     return nil
 end
 F.HealthBarOf = healthBarOf
+
+local FALLBACK_TEXTURE = "Interface\\TargetingFrame\\UI-StatusBar"
+
+-- Ours, parented to theirs so it inherits their position, their size and
+-- whether they are shown at all. Creating a child is not a write to the
+-- parent; nothing about their table changes.
+local overlays = setmetatable({}, { __mode = "k" })
+
+local function overlayFor(bar)
+    local ov = overlays[bar]
+    if ov then return ov end
+    ov = CreateFrame("StatusBar", nil, bar)
+    ov:SetAllPoints(bar)
+    ov:SetFrameLevel(bar:GetFrameLevel() + 1)
+    local tex = bar.GetStatusBarTexture and bar:GetStatusBarTexture()
+    local path = tex and tex.GetTexture and tex:GetTexture()
+    ov:SetStatusBarTexture(path or FALLBACK_TEXTURE)
+    ov:Hide()
+    overlays[bar] = ov
+    return ov
+end
+F.OverlayFor = overlayFor
+
+-- The only place the secrets are handled, and they are only moved.
+local function follow(ov, bar)
+    local mn, mx = bar:GetMinMaxValues()
+    ov:SetMinMaxValues(mn, mx)
+    ov:SetValue(bar:GetValue())
+end
 
 -- Party and raid frames already have a setting for this, so use theirs
 -- rather than painting over the top of it.
@@ -97,41 +139,62 @@ function F:OpenEditMode()
     return true
 end
 
--- Never call UnitFrameHealthBar_Update ourselves.
---
--- Health is a secret value on this client. Blizzard's own code may
--- compare one; ours may not, and anything it calls inherits our taint.
--- Asking their function to redraw a bar therefore blows up inside their
--- text formatter with "attempt to compare a secret number value",
--- pointing at us. Colour is the only thing we have any business
--- touching, so repainting means setting the colour and nothing else.
-
 function F:Repaint()
     local on = ns.db().classColorHealth
+    local live = false
     for _, def in ipairs(FRAMES) do
         local bar = healthBarOf(rawget(_G, def[1]))
-        local unit = (bar and bar.unit) or def[2]
-        if bar and UnitExists and UnitExists(unit) and not bar.disconnected then
-            if on then
-                local r, g, b = classColor(unit)
-                if r then
-                    bar:SetStatusBarColor(r, g, b)
-                    -- Tell their update to leave it alone from here.
-                    if bar.wicksLocked == nil then bar.wicksLocked = bar.lockColor or false end
-                    bar.lockColor = true
-                end
-            elseif bar.wicksLocked ~= nil then
-                -- Hand the bar back exactly as it was found.
-                bar.lockColor = bar.wicksLocked or nil
-                bar.wicksLocked = nil
-                bar:SetStatusBarColor(0, 1, 0)
+        if bar then
+            local unit = bar.unit or def[2]
+            local r, g, b
+            if on and UnitExists and UnitExists(unit) and bar:IsShown() then
+                r, g, b = classColor(unit)
             end
+            if r then
+                local ov = overlayFor(bar)
+                ov:SetStatusBarColor(r, g, b)
+                follow(ov, bar)
+                ov:Show()
+                live = true
+            else
+                local ov = overlays[bar]
+                if ov then ov:Hide() end
+            end
+        end
+    end
+    self.live = live
+    return live
+end
+
+-- Health moves constantly and the only way to know is to look, because
+-- the events that would tell us carry values we may not read. Following
+-- their bar a few times a second is cheap and cannot go out of step.
+local TICK = 0.05
+
+function F:Tick()
+    for bar, ov in pairs(overlays) do
+        if ov:IsShown() then
+            if bar:IsShown() then follow(ov, bar) else ov:Hide() end
         end
     end
 end
 
 function F:Apply()
     self:Repaint()
+    local driver = self.driver
+    if not driver then
+        driver = CreateFrame("Frame")
+        self.driver = driver
+        driver.elapsed = 0
+        driver:SetScript("OnUpdate", function(d, dt)
+            d.elapsed = d.elapsed + dt
+            if d.elapsed < TICK then return end
+            d.elapsed = 0
+            Core.safe(F.Tick, F)
+        end)
+    end
+    -- Nothing coloured means nothing to follow, so stop looking.
+    if self.live then driver:Show() else driver:Hide() end
 end
 
 function F:Init()

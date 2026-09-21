@@ -176,7 +176,8 @@ function A:OnEnable()
         y = O:Heading(page, "Unit frames", y - 6)
         y = O:Check(page, "Class colour on health bars", function() return db.classColorHealth == true end,
             function(v) db.classColorHealth = v; ns.Apply() end, y)
-        y = O:Note(page, "The game paints every health bar the same green. This colours the player, target, focus and boss frames by class. Party and raid frames have a setting of their own, below.", y)
+        y = O:Note(page, "The game paints every health bar the same green. This colours the player, target, focus, boss and party frames by class. Party and raid frames have a setting of their own, below.", y)
+        y = O:Note(page, "Done by laying a bar of ours over Blizzard's rather than recolouring theirs, because changing anything on their unit frames taints them and this client will not let tainted code read health. If you have the numbers turned on inside the bar, they sit behind the colour.", y)
         y = O:Check(page, "Class colour on party and raid frames",
             function() return ns.modules.frames and ns.modules.frames:RaidClassColor() end,
             function(v) if ns.modules.frames then ns.modules.frames:SetRaidClassColor(v) end end, y)
