@@ -72,7 +72,11 @@ local function healthBarOf(frame)
 end
 F.HealthBarOf = healthBarOf
 
-local FALLBACK_TEXTURE = "Interface\\TargetingFrame\\UI-StatusBar"
+-- A flat fill, not a copy of theirs. Their bar is drawn from an atlas,
+-- so asking for its texture hands back the whole sheet: setting that on
+-- a bar of ours drew the sheet's stripes across the health bar. A solid
+-- block tinted to the class colour is both correct and the house style.
+local FILL = "Interface\\BUTTONS\\WHITE8X8"
 
 -- Ours, parented to theirs so it inherits their position, their size and
 -- whether they are shown at all. Creating a child is not a write to the
@@ -85,9 +89,7 @@ local function overlayFor(bar)
     ov = CreateFrame("StatusBar", nil, bar)
     ov:SetAllPoints(bar)
     ov:SetFrameLevel(bar:GetFrameLevel() + 1)
-    local tex = bar.GetStatusBarTexture and bar:GetStatusBarTexture()
-    local path = tex and tex.GetTexture and tex:GetTexture()
-    ov:SetStatusBarTexture(path or FALLBACK_TEXTURE)
+    ov:SetStatusBarTexture(FILL)
     ov:Hide()
     overlays[bar] = ov
     return ov

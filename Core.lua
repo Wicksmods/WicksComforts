@@ -202,6 +202,12 @@ end
 A:RegisterSlash(function(_, msg)
     msg = Core.trim((msg or ""):lower())
     if msg == "" or msg == "options" or msg == "config" then A:OpenOptions() return end
+    if msg == "zoom" then
+        -- A camera setting that quietly does nothing looks exactly like
+        -- one that is not there, so it says which.
+        if ns.modules.client then ns.modules.client:Report() end
+        return
+    end
     if msg == "status" then
         local db = ns.db()
         local on = {}
