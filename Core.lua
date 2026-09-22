@@ -202,6 +202,18 @@ end
 A:RegisterSlash(function(_, msg)
     msg = Core.trim((msg or ""):lower())
     if msg == "" or msg == "options" or msg == "config" then A:OpenOptions() return end
+    if msg == "who" or msg == "fixes" then
+        if ns.modules.fixes then
+            for _, line in ipairs(ns.modules.fixes:WhoReport()) do A:Print(line) end
+        end
+        return
+    end
+    if msg == "fixes off" or msg == "fixes on" then
+        local on = msg == "fixes on"
+        ns.db().clientFixes = on
+        A:Print("client fixes " .. (on and "on" or "off") .. ". Reload for it to take effect.")
+        return
+    end
     if msg == "zoom" then
         -- A camera setting that quietly does nothing looks exactly like
         -- one that is not there, so it says which.
