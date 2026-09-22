@@ -107,14 +107,15 @@ end
 -- rather than painting over the top of it.
 local RAID_CVAR = "raidFramesDisplayClassColor"
 
+-- Set the variable and nothing else. Asking CompactRaidFrameContainer to
+-- refresh from here ran their update in our execution: the needsUpdate
+-- flag it wrote onto every compact frame was a tainted value, their
+-- OnUpdate read it, and the next line compared a secret colour component
+-- and threw, blaming us. Blizzard's own CVar handler does the refresh.
 function F:SetRaidClassColor(on)
     local set = (C_CVar and C_CVar.SetCVar) or rawget(_G, "SetCVar")
     if not set then return false end
-    local ok = pcall(set, RAID_CVAR, on and "1" or "0")
-    if ok and CompactRaidFrameContainer and CompactRaidFrameContainer.TryUpdate then
-        pcall(CompactRaidFrameContainer.TryUpdate, CompactRaidFrameContainer)
-    end
-    return ok
+    return (pcall(set, RAID_CVAR, on and "1" or "0"))
 end
 
 function F:RaidClassColor()
