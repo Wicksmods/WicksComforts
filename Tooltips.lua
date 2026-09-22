@@ -65,7 +65,15 @@ function T:DecorateUnit(tt, unit)
         if UnitExists(target) then
             local name = UnitName(target)
             if name then
-                if UnitIsUnit(target, "player") then
+                -- Unit identity goes secret under some of this client's
+                -- restrictions, and a secret cannot be tested for truth:
+                -- doing it anyway was blocked two hundred times in one
+                -- taint log. When we cannot tell, say the name, which is
+                -- true either way.
+                local isYou = false
+                local ok, same = pcall(UnitIsUnit, target, "player")
+                if ok and not R:IsSecret(same) then isYou = same == true end
+                if isYou then
                     tt:AddDoubleLine("Targeting", "you", DIM[1], DIM[2], DIM[3], 0.85, 0.3, 0.3)
                 else
                     tt:AddDoubleLine("Targeting", name, DIM[1], DIM[2], DIM[3], 1, 1, 1)
