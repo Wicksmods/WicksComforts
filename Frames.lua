@@ -16,10 +16,18 @@ local ADDON, ns = ...
 local Core = ns.Core
 local F = ns:Register("frames", {})
 
+-- The class colour in the set the player chose in WickCore: the game's
+-- own table, or the Classic-era codes (/wickcore theme classic). Reading
+-- RAID_CLASS_COLORS directly gave this client's retail-era hues, which
+-- looked slightly wrong next to everything else in the suite.
 local function classColor(unit)
     if not UnitIsPlayer or not UnitIsPlayer(unit) then return nil end
     local _, class = UnitClass(unit)
     if not class then return nil end
+    if Core.Chrome and Core.Chrome.ClassColor then
+        local r, g, b = Core.Chrome:ClassColor(class)
+        if r then return r, g, b end
+    end
     local colors = rawget(_G, "RAID_CLASS_COLORS")
     local c = colors and colors[class]
     if not c then return nil end
@@ -72,11 +80,11 @@ local function healthBarOf(frame)
 end
 F.HealthBarOf = healthBarOf
 
--- A flat fill, not a copy of theirs. Their bar is drawn from an atlas,
--- so asking for its texture hands back the whole sheet: setting that on
--- a bar of ours drew the sheet's stripes across the health bar. A solid
--- block tinted to the class colour is both correct and the house style.
-local FILL = "Interface\\BUTTONS\\WHITE8X8"
+-- Blizzard's own status bar texture, the one their health bars have used
+-- since the beginning. A flat white fill tinted to the class colour was
+-- correct and far too bright; this carries the same shading theirs does,
+-- so a class-coloured bar sits next to a green one without shouting.
+local FILL = "Interface\\TargetingFrame\\UI-StatusBar"
 
 -- Ours, parented to theirs so it inherits their position, their size and
 -- whether they are shown at all. Creating a child is not a write to the
