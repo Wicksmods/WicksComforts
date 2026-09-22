@@ -25,7 +25,11 @@ function V:Repair()
     local db = ns.db()
     if not db.autoRepair then return end
     if not (CanMerchantRepair and CanMerchantRepair()) then return end
-    local cost, canRepair = GetRepairAllCost and GetRepairAllCost()
+    -- Split, not guarded inline: `local a, b = fn and fn()` keeps only the
+    -- first return, so canRepair came back nil every time and the guard
+    -- below sent us home before anything was repaired.
+    if not GetRepairAllCost then return end
+    local cost, canRepair = GetRepairAllCost()
     if not canRepair or not cost or cost <= 0 then return end
 
     if db.guildRepair and CanGuildBankRepair and CanGuildBankRepair() then
