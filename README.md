@@ -1,3 +1,4 @@
+<p align="center"><img src="images/wick-thumb-comforts.png" alt="Wick's Comforts"></p>
 # Wick's Comforts
 
 > Small comforts: square minimap, richer tooltips, auto loot, auto repair and junk selling. Everything off until you turn it on.
