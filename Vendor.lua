@@ -6,6 +6,7 @@
 -- so a mistake is visible rather than silent.
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local Core = ns.Core
 local D = Core.Dialect
 local V = ns:Register("vendor", {})

@@ -10,6 +10,7 @@
 -- option back off restores the game exactly.
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local Core = ns.Core
 local G = ns:Register("glow", {})
 

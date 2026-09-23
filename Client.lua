@@ -6,6 +6,7 @@
 -- disabled, and nothing here fights Blizzard's own options.
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local Core = ns.Core
 local C = ns:Register("client", {})
 

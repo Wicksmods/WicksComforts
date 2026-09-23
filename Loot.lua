@@ -6,6 +6,7 @@
 -- and it never fights the checkbox in Blizzard's own options.
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local Core = ns.Core
 local L = ns:Register("loot", {})
 

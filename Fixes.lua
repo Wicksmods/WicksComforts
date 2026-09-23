@@ -12,6 +12,7 @@
 -- error you did not cause and cannot act on is not a preference.
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local Core = ns.Core
 local F = ns:Register("fixes", {})
 

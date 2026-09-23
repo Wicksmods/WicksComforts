@@ -8,6 +8,7 @@
 -- way for an addon to know which one you wanted.
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local Core = ns.Core
 local Q = ns:Register("quests", {})
 

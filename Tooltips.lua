@@ -6,6 +6,7 @@
 -- old OnTooltipSetItem hook is used there. Each line is opt in.
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local Core = ns.Core
 local D, R = Core.Dialect, Core.Restrict
 local T = ns:Register("tooltips", {})

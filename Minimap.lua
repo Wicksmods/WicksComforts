@@ -12,6 +12,7 @@
 -- and a file-path mask. Both are handled here.
 
 local ADDON, ns = ...
+if not WickCore then return end   -- said once in Core.lua
 local M = ns:Register("minimap", {})
 local Chrome = ns.Core.Chrome
 
