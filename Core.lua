@@ -66,6 +66,7 @@ local PROFILE_DEFAULTS = {
     -- The client's own settings, surfaced
     maxCameraZoom    = false,
     soundInBackground = false,
+    chatArrowKeys    = false,
     hideProcGlow     = false,
     -- The one exception to everything-off: a workaround for the
     -- client's own errors, which are not a preference.
@@ -196,6 +197,8 @@ function A:OnEnable()
         y = O:Heading(page, "The camera and the client", y - 6)
         y = toggle("Zoom the camera out further", "maxCameraZoom", y, "Raises the game's own maximum zoom setting to the highest this client accepts.")
         y = toggle("Keep sound playing when the game is in the background", "soundInBackground", y)
+        y = toggle("Arrow keys move the cursor in chat", "chatArrowKeys", y,
+            "This client hands the chat box the old behaviour, where the arrows steer your character and it takes Alt and an arrow to move the cursor or bring back what you last typed. This gives the arrows to the text box, the way every other text box works.")
         y = toggle("Hide the proc glow on action buttons", "hideProcGlow", y, "The spinning yellow overlay when a spell lights up. The button still changes as it always did; only the overlay goes.")
 
         y = O:Heading(page, "Unit frames", y - 6)

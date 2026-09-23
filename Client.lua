@@ -17,6 +17,22 @@ local C = ns:Register("client", {})
 local ZOOM_NAMES = { "cameraDistanceMaxZoomFactor", "cameraDistanceMaxFactor" }
 local SOUND = "Sound_EnableSoundWhenGameIsInBG"
 
+-- The chat boxes on this client come up in the old alt arrow mode: the
+-- arrows steer your character and it takes Alt and an arrow to move the
+-- cursor or walk back through what you typed. Every other text box in
+-- the game, and every text box outside it, does the opposite.
+--
+-- This is not a console variable, it is a property of each edit box, so
+-- it has to be set on every one of them and set again for any window
+-- opened later.
+local function eachChatBox(fn)
+    local n = rawget(_G, "NUM_CHAT_WINDOWS") or 10
+    for i = 1, n do
+        local box = rawget(_G, "ChatFrame" .. i .. "EditBox")
+        if box and box.SetAltArrowKeyMode then pcall(fn, box) end
+    end
+end
+
 -- The client refuses a factor above its own ceiling, and the ceiling has
 -- moved between expansions. Walk down from the highest any build has
 -- allowed and keep the first one that sticks.
@@ -87,14 +103,23 @@ function C:Apply()
     if db.soundInBackground then
         if ns.cvGet(SOUND) ~= "1" then ns.cvSet(SOUND, "1") end
     end
+
+    -- Off puts the client default back rather than leaving our state
+    -- behind: switching a comfort off should leave no trace of it.
+    local alt = not db.chatArrowKeys
+    eachChatBox(function(box) box:SetAltArrowKeyMode(alt) end)
 end
 
 function C:Init()
     -- The camera factor is reset on some loading screens, so put it back
     -- once the world is there rather than only at login. The camera
     -- itself is only pushed out once, not on every zone change.
-    ns.RegisterEvents({ "PLAYER_ENTERING_WORLD" })
+    ns.RegisterEvents({ "PLAYER_ENTERING_WORLD", "UPDATE_CHAT_WINDOWS", "UPDATE_FLOATING_CHAT_WINDOWS" })
     ns:On("PLAYER_ENTERING_WORLD", function() Core.safe(C.Apply, C) end)
+    -- A chat window opened or docked after login comes up with the
+    -- client default, so catch it rather than only doing this at login.
+    ns:On("UPDATE_CHAT_WINDOWS", function() Core.safe(C.Apply, C) end)
+    ns:On("UPDATE_FLOATING_CHAT_WINDOWS", function() Core.safe(C.Apply, C) end)
 end
 
 -- Said out loud, because a camera setting that does nothing looks the
