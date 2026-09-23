@@ -1,5 +1,18 @@
 # Wick's Comforts - Changelog
 
+## 0.9.1
+
+### Arrow keys move the cursor in chat
+
+This client hands the chat box the old behaviour, where the arrows steer
+your character and it takes Alt and an arrow to move the cursor or bring
+back what you last typed. Every other text box does the opposite. Off
+until you turn it on, under the camera and client heading.
+
+It is a property of each chat window rather than a setting, so it is
+applied to all of them and again to any window you open or dock later,
+which would otherwise arrive with the client default.
+
 ## 0.9.0
 
 One version across the suite for the Forever beta. Every addon carried a
