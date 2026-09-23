@@ -2,7 +2,7 @@
 ## Title: Wick's Comforts
 ## Notes: Small comforts: square minimap, richer tooltips, auto loot, auto repair, auto quests, camera zoom and class-coloured health bars. Everything off until you turn it on.
 ## Author: Wick
-## Version: 0.1.0
+## Version: 0.9.0
 ## OptionalDeps: WickCore
 ## SavedVariables: WicksComfortsSaved
 ## X-Website: https://wicksmods.com

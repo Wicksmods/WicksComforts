@@ -42,7 +42,7 @@ if not Core then
 end
 ns.Core = Core
 
-ns.version = "0.1.0"
+ns.version = "0.9.0"
 
 local PROFILE_DEFAULTS = {
     -- Minimap
